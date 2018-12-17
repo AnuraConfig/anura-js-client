@@ -15,9 +15,6 @@ const query = /* GraphQL */`
 
 
 class ConfigManager {
-    constructor() {
-
-    }
     async initializeConfig(url, serviceId, environment, options) {
         this.options = options || {}
         this.serviceId = serviceId
@@ -31,13 +28,15 @@ class ConfigManager {
         this.socket.on(CONFIG_UPDATE_EVENT, this.getConfigData)
     }
     async getConfigData() {
-        const data = await this.gqlClient.request(query, { environment: this.environment, serviceId: this.serviceId })
-        this.data = JSON.parse(data.latestConfig)
-        if (this.options.callback) this.options.callback()
+        this.data = new Promise(async (resolve) => {
+            const data = await this.gqlClient.request(query, { environment: this.environment, serviceId: this.serviceId })
+            if (this.options.callback) this.options.callback()
+            resolve(JSON.parse(data.latestConfig))
+        })
     }
     getData() {
         return this.data
     }
-
 }
+
 export default new ConfigManager()

@@ -4,7 +4,7 @@
   "description": "Official Anura client library for Node.js and the browser",
   "main": "lib/index.js",
   "scripts": {
-    "start": "nodemon --exec babel-node --presets env,stage-2 src/index.js",
+    "start": "nodemon --exec babel-node --presets env,stage-2 src/test.js",
     "build": "babel src -d lib",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -28,7 +28,8 @@
     "nodemon": "^1.18.9"
   },
   "dependencies": {
-    "graphql-request": "^1.8.2",
-    "socket.io-client": "^2.2.0"
+    "request": "^2.88.0",
+    "socket.io-client": "^2.2.0",
+    "sync-request": "^6.0.0"
   }
 }

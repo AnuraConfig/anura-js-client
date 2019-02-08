@@ -10,21 +10,26 @@ function getSocketOptions(serviceId, environment) {
 }
 
 const query = /* GraphQL */`
- query String($serviceId: String, $environment: String){
-	latestConfig(serviceId: $serviceId, environment: $environment)
+ query String($serviceId: String, $environment: String, $raw: Boolean){
+	latestConfig(serviceId: $serviceId, environment: $environment, raw: $raw){
+        data
+    }
 }`
 
 function log(message, level) {
     console.log(`Anura (${level}):   ${message}`)
 }
 
+const defaultOptions = {
+    logger: { log }
+}
 class ConfigManager {
-    initializeConfig(url, serviceId, environment, options, logger = { log }) {
-        this.options = options || {}
+    initializeConfig(url, serviceId, environment, options = defaultOptions) {
+        this.options = options
         this.serviceId = serviceId
         this.environment = environment
         this.gqlClient = url + GRAPHQL_PATH
-        this.logger = options.logger || logger
+        this.logger = options.logger
         this.initializeSocket(url, serviceId, environment)
         this.getSyncConfigData()
     }

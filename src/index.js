@@ -17,12 +17,18 @@ const query = /* GraphQL */`
 }`
 
 function log(message, level) {
-    console.log(`Anura (${level}):   ${message}`)
+    console.log(`Anura [${level}]: ${message}`)
+}
+function defaultProcessData(data) {
+    return data
 }
 
 const defaultOptions = {
-    logger: { log }
+    logger: { log },
+    raw: false,
+    process: defaultProcessData
 }
+
 class ConfigManager {
     initializeConfig(url, serviceId, environment, options = defaultOptions) {
         this.options = options
@@ -38,12 +44,11 @@ class ConfigManager {
         this.socket.on(CONFIG_UPDATE_EVENT, this.getConfigData)
     }
     getSyncConfigData() {
+        this.logger.log("getting the intit config ", "info")
         const res = syncRequest("POST", this.gqlClient, {
             json: { query, variables: { environment: this.environment, serviceId: this.serviceId } }
         })
-        const data = JSON.parse(res.getBody('utf8')).data;
-        this.data = JSON.parse(data.latestConfig)
-        if (this.options.callback) this.options.callback(this.data)
+        this._loadData(JSON.parse(res.getBody('utf8')))
     }
 
     getConfigData() {
@@ -51,16 +56,22 @@ class ConfigManager {
             json: { query, variables: { environment: this.environment, serviceId: this.serviceId } }
         }, (error, response, body) => {
             this.logger.log(error, "error")
-            if (this.options.raw)
-                this.data = body.data.latestConfig
-            else
-                this.data = JSON.parse(body.data.latestConfig)
-            if (this.options.callback) this.options.callback(this.data)
+            this._loadData(body)
         })
     }
 
     getData() {
         return this.data
+    }
+
+    _loadData(body) {
+        let data
+        if (this.options.raw)
+            data = body.data.latestConfig.data
+        else
+            data = JSON.parse(body.data.latestConfig.data)
+        this.data = this.options.process(data)
+        if (this.options.callback) this.options.callback(this.data)
     }
 }
 

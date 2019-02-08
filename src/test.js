@@ -1,3 +1,11 @@
 import config from './index'
-config.initializeConfig('http://localhost:4000', "0caaf6b0-2c83-4ab8-b783-96a6916ae933", "SDFSDF")
-config.getConfigData()
+const options = {
+    raw: true,
+    printLog: true
+}
+
+config.initializeConfig('http://localhost:4000', "34eb75d0-5f8a-47cd-8e05-042ada1ba8e7", "adsda", options)
+let data = config.getData()
+console.log("===========================")
+console.log(data)
+console.log("===========================")

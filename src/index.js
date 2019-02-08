@@ -54,14 +54,14 @@ class ConfigManager {
     getSyncConfigData() {
         this.options.logger.log("getting the intit config ", "info")
         const res = syncRequest("POST", this.gqlClient, {
-            json: { query, variables: { environment: this.environment, serviceId: this.serviceId } }
+            json: { query, variables: { environment: this.environment, serviceId: this.serviceId, raw: !!this.options.raw } }
         })
         this._loadData(JSON.parse(res.getBody('utf8')))
     }
 
     getConfigData() {
         request.post(this.gqlClient, {
-            json: { query, variables: { environment: this.environment, serviceId: this.serviceId } }
+            json: { query, variables: { environment: this.environment, serviceId: this.serviceId, raw: !!this.options.raw } }
         }, (error, response, body) => {
             this.options.logger.log(error, "error")
             this._loadData(body)

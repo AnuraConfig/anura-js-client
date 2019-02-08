@@ -8,18 +8,23 @@ function getSocketOptions(serviceId, environment) {
         query: `serviceId=${serviceId}&environment=${environment}`
     }
 }
+
 const query = /* GraphQL */`
  query String($serviceId: String, $environment: String){
 	latestConfig(serviceId: $serviceId, environment: $environment)
 }`
 
+function log(message, level) {
+    console.log(`Anura (${level}):   ${message}`)
+}
 
 class ConfigManager {
-    initializeConfig(url, serviceId, environment, options) {
+    initializeConfig(url, serviceId, environment, options, logger = { log }) {
         this.options = options || {}
         this.serviceId = serviceId
         this.environment = environment
         this.gqlClient = url + GRAPHQL_PATH
+        this.logger = options.logger || logger
         this.initializeSocket(url, serviceId, environment)
         this.getSyncConfigData()
     }
@@ -35,15 +40,20 @@ class ConfigManager {
         this.data = JSON.parse(data.latestConfig)
         if (this.options.callback) this.options.callback(this.data)
     }
-    
+
     getConfigData() {
         request.post(this.gqlClient, {
             json: { query, variables: { environment: this.environment, serviceId: this.serviceId } }
         }, (error, response, body) => {
-            this.data = JSON.parse(body.data.latestConfig)
+            this.logger.log(error, "error")
+            if (this.options.raw)
+                this.data = body.data.latestConfig
+            else
+                this.data = JSON.parse(body.data.latestConfig)
             if (this.options.callback) this.options.callback(this.data)
         })
     }
+
     getData() {
         return this.data
     }

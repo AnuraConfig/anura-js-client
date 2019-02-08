@@ -19,23 +19,31 @@ const query = /* GraphQL */`
 function log(message, level) {
     console.log(`Anura [${level}]: ${message}`)
 }
+
+function getLogger(isLog) {
+    if (isLog)
+        return { log }
+    return { log: () => { } }
+}
+
 function defaultProcessData(data) {
     return data
 }
 
-const defaultOptions = {
-    logger: { log },
-    raw: false,
-    process: defaultProcessData
+const getDefaultOptions = ({ printLog }) => {
+    return {
+        logger: getLogger(printLog),
+        raw: false,
+        process: defaultProcessData
+    }
 }
 
 class ConfigManager {
-    initializeConfig(url, serviceId, environment, options = defaultOptions) {
-        this.options = options
+    initializeConfig(url, serviceId, environment, options = {}) {
+        this.options = Object.assign({}, getDefaultOptions(options), options)
         this.serviceId = serviceId
         this.environment = environment
         this.gqlClient = url + GRAPHQL_PATH
-        this.logger = options.logger
         this.initializeSocket(url, serviceId, environment)
         this.getSyncConfigData()
     }
@@ -44,7 +52,7 @@ class ConfigManager {
         this.socket.on(CONFIG_UPDATE_EVENT, this.getConfigData)
     }
     getSyncConfigData() {
-        this.logger.log("getting the intit config ", "info")
+        this.options.logger.log("getting the intit config ", "info")
         const res = syncRequest("POST", this.gqlClient, {
             json: { query, variables: { environment: this.environment, serviceId: this.serviceId } }
         })
@@ -55,7 +63,7 @@ class ConfigManager {
         request.post(this.gqlClient, {
             json: { query, variables: { environment: this.environment, serviceId: this.serviceId } }
         }, (error, response, body) => {
-            this.logger.log(error, "error")
+            this.options.logger.log(error, "error")
             this._loadData(body)
         })
     }

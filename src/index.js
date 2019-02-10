@@ -52,7 +52,7 @@ class ConfigManager {
         this.socket.on(CONFIG_UPDATE_EVENT, this.getConfigData)
     }
     getSyncConfigData() {
-        this.options.logger.log("getting the intit config ", "info")
+        this.options.logger.log("getting the init config ", "info")
         const res = syncRequest("POST", this.gqlClient, {
             json: { query, variables: { environment: this.environment, serviceId: this.serviceId, raw: !!this.options.raw } }
         })

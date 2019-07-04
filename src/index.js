@@ -3,15 +3,15 @@ import io from 'socket.io-client'
 import syncRequest from 'sync-request'
 import request from 'request'
 
-function getSocketOptions(serviceId, environment) {
+function getSocketOptions(serviceName, environment) {
     return {
-        query: `serviceId=${serviceId}&environment=${environment}`
+        query: `serviceName=${serviceName}&environment=${environment}`
     }
 }
 
 const query = /* GraphQL */`
- query String($serviceId: String, $environment: String, $raw: Boolean){
-	latestConfig(serviceId: $serviceId, environment: $environment, raw: $raw){
+ query String($serviceName: String, $environment: String, $raw: Boolean){
+	latestConfig(serviceName: $serviceName, environment: $environment, raw: $raw){
         data
     }
 }`
@@ -39,40 +39,43 @@ const getDefaultOptions = ({ printLog }) => {
 }
 
 class ConfigManager {
-    initializeConfig(url, serviceId, environment, options = {}) {
+    initializeConfig = (url, serviceName, environment, options = {}) => {
         this.options = Object.assign({}, getDefaultOptions(options), options)
-        this.serviceId = serviceId
+        this.serviceName = serviceName
         this.environment = environment
         this.gqlClient = url + GRAPHQL_PATH
-        this.initializeSocket(url, serviceId, environment)
+        this.initializeSocket(url, serviceName, environment)
         this.getSyncConfigData()
     }
-    initializeSocket(url, serviceID, environment) {
-        this.socket = io(url, getSocketOptions(serviceID, environment))
+    initializeSocket = (url, serviceName, environment) => {
+        this.socket = io(url, getSocketOptions(serviceName, environment))
         this.socket.on(CONFIG_UPDATE_EVENT, this.getConfigData)
     }
-    getSyncConfigData() {
-        this.options.logger.log("getting the intit config ", "info")
+    getSyncConfigData = () => {
+        const { environment, options, serviceName, raw } = this
+        options.logger.log("getting the init config ", "info")
         const res = syncRequest("POST", this.gqlClient, {
-            json: { query, variables: { environment: this.environment, serviceId: this.serviceId, raw: !!this.options.raw } }
+            json: { query, variables: { environment, serviceName, raw: !!raw } }
         })
         this._loadData(JSON.parse(res.getBody('utf8')))
     }
 
-    getConfigData() {
+    getConfigData = () => {
+        const { environment, options, serviceName, raw, _loadData } = this
         request.post(this.gqlClient, {
-            json: { query, variables: { environment: this.environment, serviceId: this.serviceId, raw: !!this.options.raw } }
+            json: { query, variables: { environment, serviceName, raw: !!raw } }
         }, (error, response, body) => {
-            this.options.logger.log(error, "error")
-            this._loadData(body)
+            if (error)
+                options.logger.log(error, "error")
+            _loadData(body)
         })
     }
 
-    getData() {
+    getData = () => {
         return this.data
     }
 
-    _loadData(body) {
+    _loadData = (body) => {
         let data
         if (this.options.raw)
             data = body.data.latestConfig.data

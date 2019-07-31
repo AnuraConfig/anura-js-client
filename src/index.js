@@ -76,6 +76,7 @@ class ConfigManager {
     }
 
     _loadData = (body) => {
+        if (!body.data.latestConfig) return {}
         let data
         if (this.options.raw)
             data = body.data.latestConfig.data

@@ -39,6 +39,10 @@ const getDefaultOptions = ({ printLog }) => {
 }
 
 class ConfigManager {
+    constructor(){
+        this.subscriptions = []
+    }
+
     initializeConfig = (url, serviceName, environment, options = {}) => {
         this.options = Object.assign({}, getDefaultOptions(options), options)
         this.serviceName = serviceName
@@ -47,9 +51,14 @@ class ConfigManager {
         this.initializeSocket(url, serviceName, environment)
         this.getSyncConfigData()
     }
+
     initializeSocket = (url, serviceName, environment) => {
         this.socket = io(url, getSocketOptions(serviceName, environment))
         this.socket.on(CONFIG_UPDATE_EVENT, this.getConfigData)
+    }
+
+    subscribe = (callback) => {
+        this.subscriptions.push(callback)
     }
 
     getSyncConfigData = () => {
@@ -88,7 +97,7 @@ class ConfigManager {
         else
             data = JSON.parse(body.data.latestConfig.data)
         this.data = this.options.process(data)
-        if (this.options.callback) this.options.callback(this.data)
+        this._updateCallbacks(this.data)
     }
 
     _errorLoadingConfig = (error) => {
@@ -102,7 +111,14 @@ class ConfigManager {
     _loadDefaultConfig = () => {
         this.options.logger.log("using default config", "info")
         this.data = this.options.process(this.options.defaultConfig)
-        if (this.options.callback) this.options.callback(this.data)
+        this._updateCallbacks(this.data)
+    }
+
+    _updateCallbacks = (data) => {
+        if (this.options.callback) this.options.callback(data)
+        this.subscriptions.forEach(callback => {
+            callback(data)
+        })
     }
 }
 

@@ -34,14 +34,12 @@ const getDefaultOptions = ({ printLog }) => {
     return {
         logger: getLogger(printLog),
         raw: false,
-        process: defaultProcessData,
-        requestTimeout: 1000
+        process: defaultProcessData
     }
 }
 
 class ConfigManager {
     initializeConfig = (url, serviceName, environment, options = {}) => {
-        console.log(options)
         this.options = Object.assign({}, getDefaultOptions(options), options)
         this.serviceName = serviceName
         this.environment = environment
@@ -60,7 +58,7 @@ class ConfigManager {
         try {
             const res = syncRequest("POST", this.gqlClient, {
                 json: { query, variables: { environment, serviceName, raw: !!raw } }
-            }, { timeout: options.requestTimeout })
+            })
             this._loadData(JSON.parse(res.getBody('utf8')))
         } catch (e) {
             this._errorLoadingConfig(e)

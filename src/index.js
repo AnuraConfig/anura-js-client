@@ -51,13 +51,18 @@ class ConfigManager {
         this.socket = io(url, getSocketOptions(serviceName, environment))
         this.socket.on(CONFIG_UPDATE_EVENT, this.getConfigData)
     }
+
     getSyncConfigData = () => {
         const { environment, options, serviceName, raw } = this
         options.logger.log("getting the init config ", "info")
-        const res = syncRequest("POST", this.gqlClient, {
-            json: { query, variables: { environment, serviceName, raw: !!raw } }
-        })
-        this._loadData(JSON.parse(res.getBody('utf8')))
+        try {
+            const res = syncRequest("POST", this.gqlClient, {
+                json: { query, variables: { environment, serviceName, raw: !!raw } }
+            })
+            this._loadData(JSON.parse(res.getBody('utf8')))
+        } catch (e) {
+            this._errorLoadingConfig(e)
+        }
     }
 
     getConfigData = () => {
@@ -83,6 +88,20 @@ class ConfigManager {
         else
             data = JSON.parse(body.data.latestConfig.data)
         this.data = this.options.process(data)
+        if (this.options.callback) this.options.callback(this.data)
+    }
+
+    _errorLoadingConfig = (error) => {
+        this.options.logger.log("failed retrieving anura initial config: " + error.message, "error")
+        if (this.options.defaultConfig)
+            this._loadDefaultConfig()
+        else
+            throw error
+    }
+
+    _loadDefaultConfig = () => {
+        this.options.logger.log("using default config", "info")
+        this.data = this.options.process(this.options.defaultConfig)
         if (this.options.callback) this.options.callback(this.data)
     }
 }
